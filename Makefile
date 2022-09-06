@@ -31,9 +31,10 @@ DOLPHIN_ARGS := --debugger --logger --confirm
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS	 = -g -O3 -Wall $(MACHDEP) $(INCLUDE)
-CXXFLAGS = $(CFLAGS)
-LDFLAGS	 = -g $(MACHDEP) -Wl,-Map,$(notdir $@).map
+WARNINGS := -Wall -Wextra -Wpedantic
+CFLAGS	  = -g -O3 $(WARNINGS) $(MACHDEP) $(INCLUDE)
+CXXFLAGS  = $(CFLAGS)
+LDFLAGS	  = -g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project

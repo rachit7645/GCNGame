@@ -1,32 +1,38 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <ogcsys.h>
 #include <gccore.h>
+#include <gctypes.h>
+
+#include "Input.h"
+#include "Util.h"
 
 static void*       xfb   = nullptr;
 static GXRModeObj* rmode = nullptr;
 
-void* Initialise();
+Input::GamePad gamePad;
 
-int main(int argc, char** argv)
+void* InitVideo();
+
+int main(GCN_UNUSED int argc, GCN_UNUSED char** argv)
 {
-	xfb = Initialise();
-
+	xfb = InitVideo();
+	
 	printf("\nHello World!\n");
 
 	while(true)
 	{
 		VIDEO_WaitVSync();
-		PAD_ScanPads();
-
-		int buttonsDown = PAD_ButtonsDown(0);
 		
-		if(buttonsDown & PAD_BUTTON_A)
+		gamePad.Poll();
+
+		if(gamePad.A())
 		{
 			printf("Button A pressed.\n");
 		}
 
-		if (buttonsDown & PAD_BUTTON_START)
+		if (gamePad.Start())
 		{
 			exit(0);
 		}
@@ -35,7 +41,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void* Initialise()
+void* InitVideo()
 {
 	void* framebuffer;
 

@@ -14,7 +14,7 @@ namespace Input
 		GamePad(int pad);
 
 		// Poll once every frame
-		void Poll();
+		void Update();
 		// Keys
 		bool A()     const;
 		bool Start() const;
@@ -25,6 +25,8 @@ namespace Input
 		// Internal button data
 		u16 m_buttonsDown = 0;
 	};
+
+	void InitControllers();
 }
 
 

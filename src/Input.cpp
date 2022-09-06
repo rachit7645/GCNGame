@@ -9,7 +9,7 @@ GamePad::GamePad(int pad)
 {
 }
 
-void GamePad::Poll() 
+void GamePad::Update() 
 {
 	PAD_ScanPads();
 	m_buttonsDown = PAD_ButtonsDown(pad);
@@ -23,4 +23,9 @@ bool GamePad::A() const
 bool GamePad::Start() const
 {
 	return static_cast<bool>(m_buttonsDown & PAD_BUTTON_START);
+}
+
+void Input::InitControllers()
+{
+	PAD_Init();
 }

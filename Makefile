@@ -102,7 +102,7 @@ export OUTPUT := $(CURDIR)/$(TARGET)
 
 #---------------------------------------------------------------------------------
 run: $(BUILD)
-	$(DOLPHIN_DIR)/Dolphin --exec=$(OUTPUT).dol $(DOLPHIN_ARGS)
+	$(DOLPHIN_DIR)/Dolphin --exec=$(OUTPUT).elf $(DOLPHIN_ARGS)
 
 #---------------------------------------------------------------------------------
 $(BUILD):

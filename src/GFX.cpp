@@ -37,7 +37,7 @@ namespace GFX
 		15, -15, 0
 	};
 
-	static u8 colors[]	ATTRIBUTE_ALIGN(32)
+	static u8 colors[] ATTRIBUTE_ALIGN(32)
 	{
 		255, 0,	0, 255, // red
 		0, 255,	0, 255, // green
@@ -48,7 +48,7 @@ namespace GFX
 	void InitGPU();
 	void LoadData();
 	void CopyBuffers(u32 count);
-	void UpdateScreen(Mtx& view, u16 vertexCount);
+	void UpdateScreen(Mtx& view);
 	void DrawVertex(u8 position, u8 color);
 }
 
@@ -115,10 +115,10 @@ void GFX::Update()
 	GX_SetViewport(0, 0, screenMode->fbWidth, screenMode->efbHeight, 0, 1);
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
-	UpdateScreen(view, GCN_ARRAY_SIZE(vertices) / 3);
+	UpdateScreen(view);
 }
 
-void GFX::UpdateScreen(Mtx& view, u16 vertexCount)
+void GFX::UpdateScreen(Mtx& view)
 {
 	Mtx	modelView;
 	
@@ -126,8 +126,8 @@ void GFX::UpdateScreen(Mtx& view, u16 vertexCount)
 	guMtxTransApply(modelView, modelView, 0.0f,	0.0f, -50.0f);
 	guMtxConcat(view, modelView, modelView);
 	GX_LoadPosMtxImm(modelView,	GX_PNMTX0);
-	
-	GX_Begin(GX_TRIANGLES, GX_VTXFMT0, vertexCount);
+
+	GX_Begin(GX_TRIANGLES, GX_VTXFMT0, GCN_ARRAY_SIZE(vertices) / 3);
 		DrawVertex(0, 0);
 		DrawVertex(1, 1);
 		DrawVertex(2, 2);

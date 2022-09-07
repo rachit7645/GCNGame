@@ -49,6 +49,7 @@ namespace GFX
 	void LoadData();
 	void CopyBuffers(u32 count);
 	void UpdateScreen(Mtx& view, u16 vertexCount);
+	void DrawVertex(u8 position, u8 color);
 }
 
 void GFX::InitVideo()
@@ -124,19 +125,24 @@ void GFX::UpdateScreen(Mtx& view, u16 vertexCount)
 	guMtxIdentity(modelView);
 	guMtxTransApply(modelView, modelView, 0.0f,	0.0f, -50.0f);
 	guMtxConcat(view, modelView, modelView);
-	
 	GX_LoadPosMtxImm(modelView,	GX_PNMTX0);
+	
 	GX_Begin(GX_TRIANGLES, GX_VTXFMT0, vertexCount);
-	for (u8 i = 0; i < vertexCount; ++i)
-	{
-		GX_Position1x8(i);
-		GX_Color1x8(i);
-	}
+		DrawVertex(0, 0);
+		DrawVertex(1, 1);
+		DrawVertex(2, 2);
 	GX_End();
+	
 	GX_DrawDone();
 	readyForCopy = GX_TRUE;
 
 	VIDEO_WaitVSync();
+}
+
+void GFX::DrawVertex(u8 position, u8 color)
+{
+	GX_Position1x8(position);
+	GX_Color1x8(color);
 }
 
 void GFX::CopyBuffers(GCN_UNUSED u32 count)

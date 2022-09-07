@@ -8,6 +8,7 @@
 #include <ogc/tpl.h>
 
 #include "Util.h"
+#include "Camera.h"
 
 #include "textures_tpl.h"
 #include "textures.h"
@@ -29,18 +30,12 @@ namespace GFX
 	static GXTexObj texture     = {};
 	static TPLFile  texturesTPL = {};
 
-	static Mtx   view;
-	static Mtx44 projection;
-
-	static GXColor bgColor = {0, 0, 0, 255};
-	
-	static guVector camera = {0.0f, 0.0f, 0.0f};
-	static guVector up     = {0.0f, 1.0f, 0.0f};
-	static guVector look   = {0.0f, 0.0f, -1.0f};
+	static Mtx44   projection = {};
+	static GXColor bgColor    = {0, 0, 0, 255};
+	static Camera  camera     = Camera({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f});
 
 	static s16 vertices[] ATTRIBUTE_ALIGN(32)
 	{
-	//   x    y   z
 		-30,  30, 0, // 0
 		 30,  30, 0, // 1
 		 30, -30, 0, // 2
@@ -49,7 +44,6 @@ namespace GFX
 
 	static u8 colors[] ATTRIBUTE_ALIGN(32)
 	{
-	//	r    g    b    a
 		0,   255, 0,   0,   // 0 purple
 		240, 0,   0,   255, // 1 red
 		255, 180, 0,   255, // 2 orange
@@ -62,7 +56,7 @@ namespace GFX
 	void InitGPU();
 	void LoadData();
 	void CopyBuffers(u32 count);
-	void UpdateScreen(Mtx& view);
+	void UpdateScreen();
 	void DrawVertex(u8 position, u8 color, u8 texU, u8 texV);
 }
 
@@ -135,7 +129,7 @@ void GFX::LoadData()
 
 void GFX::Update()
 {
-	guLookAt(view, &camera,	&up, &look);
+	camera.CreateView();
 	GX_SetViewport(0, 0, screenMode->fbWidth, screenMode->efbHeight, 0, 1);
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
@@ -143,16 +137,15 @@ void GFX::Update()
 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 	GX_SetNumChans(1);
 	GX_LoadTexObj(&texture, GX_TEXMAP0);
-	UpdateScreen(view);
+	UpdateScreen();
 }
 
-void GFX::UpdateScreen(Mtx& view)
+void GFX::UpdateScreen()
 {
 	Mtx	modelView;
-	
 	guMtxIdentity(modelView);
 	guMtxTransApply(modelView, modelView, 0.0f,	0.0f, -50.0f);
-	guMtxConcat(view, modelView, modelView);
+	guMtxConcat(camera.viewMat, modelView, modelView);
 	GX_LoadPosMtxImm(modelView,	GX_PNMTX0);
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, GCN_ARRAY_SIZE(vertices) / 3);

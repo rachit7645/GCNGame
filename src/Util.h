@@ -9,4 +9,6 @@
 
 #define GCN_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
+#define U8_TO_VOID_PTR(x) (reinterpret_cast<void*>(const_cast<u8*>(x)))
+
 #endif

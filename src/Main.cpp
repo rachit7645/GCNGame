@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "Input.h"
 #include "GFX.h"
@@ -12,17 +11,10 @@ int main(GCN_UNUSED int argc, GCN_UNUSED char** argv)
 
 	Input::GamePad gamePad;
 
-	printf("\nInitialised System.\n");
-
 	while(true)
 	{
-		GFX::WaitVBlank();
+		GFX::Update();
 		gamePad.Update();
-
-		if(gamePad.A())
-		{
-			printf("Button A pressed.\n");
-		}
 
 		if (gamePad.Start())
 		{

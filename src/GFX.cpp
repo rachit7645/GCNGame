@@ -1,39 +1,155 @@
 #include "GFX.h"
 
 #include <gccore.h>
+#include <cmath>
+#include <cstring>
+#include <malloc.h>
 
-static void*       xfb   = nullptr;
-static GXRModeObj* rmode = nullptr;
+#include "Util.h"
+
+namespace GFX
+{
+	constexpr auto FIFO_SIZE = 256 * 1024;
+
+	static void*       frameBuffer  = nullptr;
+	static void*       fifoBuffer   = nullptr;
+	static GXRModeObj* screenMode   = nullptr;
+	static vu8         readyForCopy = GX_FALSE;
+
+	static Mtx   view;
+	static Mtx44 projection;
+
+	static GXColor bgColor = {0, 0, 0, 255};
+	
+	static guVector camera = {0.0f, 0.0f, 0.0f};
+	static guVector up     = {0.0f, 1.0f, 0.0f};
+	static guVector look   = {0.0f, 0.0f, -1.0f};
+
+	static s16 vertices[] ATTRIBUTE_ALIGN(32)
+	{
+		0, 15, 0,
+		-15, -15, 0,
+		15, -15, 0
+	};
+
+	static u8 colors[]	ATTRIBUTE_ALIGN(32)
+	{
+		255, 0,	0, 255, // red
+		0, 255,	0, 255, // green
+		0, 0, 255, 255  // blue
+	};
+}
 
 void GFX::InitVideo()
 {
 	VIDEO_Init();
 	
-	rmode = VIDEO_GetPreferredMode(nullptr);
-	xfb   = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	screenMode  = VIDEO_GetPreferredMode(nullptr);
+	frameBuffer = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
 	
-	CON_Init
-	(
-		xfb,
-		20,
-		20,
-		rmode->fbWidth,
-		rmode->xfbHeight,
-		rmode->fbWidth * VI_DISPLAY_PIX_SZ
-	);
-	
-	VIDEO_Configure(rmode);
-	VIDEO_SetNextFramebuffer(xfb);
+	VIDEO_Configure(screenMode);
+	VIDEO_SetNextFramebuffer(frameBuffer);
+	VIDEO_SetPostRetraceCallback(GFX::CopyBuffers);
 	VIDEO_SetBlack(false);
 	VIDEO_Flush();
-	VIDEO_WaitVSync();
-	if(rmode->viTVMode & VI_NON_INTERLACE)
-	{
-		VIDEO_WaitVSync();
-	}	
+	
+	fifoBuffer = MEM_K0_TO_K1(memalign(32, FIFO_SIZE));
+	memset(fifoBuffer, 0, FIFO_SIZE);
+
+	GX_Init(fifoBuffer, FIFO_SIZE);
+	GX_SetCopyClear(bgColor, GX_MAX_Z24);
+	GX_SetViewport
+	(
+		0,
+		0,
+		screenMode->fbWidth,
+		screenMode->efbHeight,
+		0,
+		1
+	);
+	GX_SetDispCopyYScale(static_cast<f32>(screenMode->xfbHeight) / static_cast<f32>(screenMode->efbHeight));
+	GX_SetScissor
+	(
+		0,
+		0,
+		screenMode->fbWidth,
+		screenMode->efbHeight
+	);
+	GX_SetDispCopySrc
+	(
+		0,
+		0,
+		screenMode->fbWidth,
+		screenMode->efbHeight
+	);
+	GX_SetDispCopyDst(screenMode->fbWidth, screenMode->xfbHeight);
+	GX_SetCopyFilter(screenMode->aa, screenMode->sample_pattern, true, screenMode->vfilter);
+	GX_SetFieldMode(screenMode->field_rendering, ((screenMode->viHeight == 2 * screenMode->xfbHeight) ? GX_ENABLE : GX_DISABLE));
+
+	GX_SetCullMode(GX_CULL_NONE);
+	GX_CopyDisp(frameBuffer, GX_TRUE);
+	GX_SetDispCopyGamma(GX_GM_1_0);
+
+	guPerspective(projection, 60, 1.33f, 10.0f,	300.0f);
+	GX_LoadProjectionMtx(projection, GX_PERSPECTIVE);
+
+	GX_ClearVtxDesc();
+	GX_SetVtxDesc(GX_VA_POS, GX_INDEX8);
+	GX_SetVtxDesc(GX_VA_CLR0, GX_INDEX8);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS,	GX_POS_XYZ,	GX_S16,	0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8,	0);
+	GX_SetArray(GX_VA_POS, vertices, 3 * sizeof(s16));
+	GX_SetArray(GX_VA_CLR0, colors, 4 * sizeof(u8));
+	GX_SetNumChans(1);
+	GX_SetNumTexGens(0);
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
 }
 
-void GFX::WaitVBlank()
+void GFX::Update()
 {
+	guLookAt(view, &camera,	&up, &look);
+	GX_SetViewport(0,0,screenMode->fbWidth,screenMode->efbHeight,0,1);
+	GX_InvVtxCache();
+	GX_InvalidateTexAll();
+	UpdateScreen(view);
+}
+
+void GFX::UpdateScreen(Mtx& view)
+{
+	Mtx	modelView;
+	
+	guMtxIdentity(modelView);
+	guMtxTransApply(modelView, modelView, 0.0f,	0.0f, -50.0f);
+	guMtxConcat(view, modelView, modelView);
+	
+	GX_LoadPosMtxImm(modelView,	GX_PNMTX0);
+
+	GX_Begin(GX_TRIANGLES, GX_VTXFMT0, 3);
+
+	GX_Position1x8(0);
+	GX_Color1x8(0);
+	GX_Position1x8(1);
+	GX_Color1x8(1);
+	GX_Position1x8(2);
+	GX_Color1x8(2);
+	
+	GX_End();
+
+	GX_DrawDone();
+	readyForCopy = GX_TRUE;
+
 	VIDEO_WaitVSync();
+}
+
+void GFX::CopyBuffers(GCN_UNUSED u32 count)
+{
+	if (readyForCopy == GX_TRUE)
+	{
+		GX_SetZMode(GX_TRUE, GX_LEQUAL,	GX_TRUE);
+		GX_SetColorUpdate(GX_TRUE);
+		GX_CopyDisp(frameBuffer, GX_TRUE);
+		GX_Flush();
+		readyForCopy = GX_FALSE;
+	}
 }

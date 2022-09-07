@@ -7,9 +7,7 @@
 namespace GFX
 {
 	void InitVideo();
-	void CopyBuffers(u32 count);
 	void Update();
-	void UpdateScreen(Mtx& view);
 }
 
 

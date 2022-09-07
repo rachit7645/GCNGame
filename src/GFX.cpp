@@ -11,6 +11,11 @@ namespace GFX
 {
 	constexpr auto FIFO_SIZE = 256 * 1024;
 
+	constexpr auto FOV    = 70.0f;
+	constexpr auto ASPECT = static_cast<f32>(4.0 / 3.0f);
+	constexpr auto NEAR   = 0.1f;
+	constexpr auto FAR    = 500.0f;
+
 	static void*       frameBuffer  = nullptr;
 	static void*       fifoBuffer   = nullptr;
 	static GXRModeObj* screenMode   = nullptr;
@@ -38,12 +43,24 @@ namespace GFX
 		0, 255,	0, 255, // green
 		0, 0, 255, 255  // blue
 	};
+
+	void InitScreen();
+	void InitGPU();
+	void LoadData();
+	void CopyBuffers(u32 count);
+	void UpdateScreen(Mtx& view, u16 vertexCount);
 }
 
 void GFX::InitVideo()
 {
 	VIDEO_Init();
-	
+	InitScreen();
+	InitGPU();
+	LoadData();
+}
+
+void GFX::InitScreen()
+{
 	screenMode  = VIDEO_GetPreferredMode(nullptr);
 	frameBuffer = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
 	
@@ -52,45 +69,30 @@ void GFX::InitVideo()
 	VIDEO_SetPostRetraceCallback(GFX::CopyBuffers);
 	VIDEO_SetBlack(false);
 	VIDEO_Flush();
-	
+}
+
+void GFX::InitGPU()
+{
 	fifoBuffer = MEM_K0_TO_K1(memalign(32, FIFO_SIZE));
 	memset(fifoBuffer, 0, FIFO_SIZE);
-
 	GX_Init(fifoBuffer, FIFO_SIZE);
+	
 	GX_SetCopyClear(bgColor, GX_MAX_Z24);
-	GX_SetViewport
-	(
-		0,
-		0,
-		screenMode->fbWidth,
-		screenMode->efbHeight,
-		0,
-		1
-	);
+	GX_SetViewport(0, 0, screenMode->fbWidth, screenMode->efbHeight, 0, 1);
 	GX_SetDispCopyYScale(static_cast<f32>(screenMode->xfbHeight) / static_cast<f32>(screenMode->efbHeight));
-	GX_SetScissor
-	(
-		0,
-		0,
-		screenMode->fbWidth,
-		screenMode->efbHeight
-	);
-	GX_SetDispCopySrc
-	(
-		0,
-		0,
-		screenMode->fbWidth,
-		screenMode->efbHeight
-	);
+	GX_SetScissor(0, 0, screenMode->fbWidth, screenMode->efbHeight);
+	GX_SetDispCopySrc(0, 0, screenMode->fbWidth, screenMode->efbHeight);
 	GX_SetDispCopyDst(screenMode->fbWidth, screenMode->xfbHeight);
 	GX_SetCopyFilter(screenMode->aa, screenMode->sample_pattern, true, screenMode->vfilter);
 	GX_SetFieldMode(screenMode->field_rendering, ((screenMode->viHeight == 2 * screenMode->xfbHeight) ? GX_ENABLE : GX_DISABLE));
-
 	GX_SetCullMode(GX_CULL_NONE);
 	GX_CopyDisp(frameBuffer, GX_TRUE);
-	GX_SetDispCopyGamma(GX_GM_1_0);
+	GX_SetDispCopyGamma(GX_GM_2_2);
+}
 
-	guPerspective(projection, 60, 1.33f, 10.0f,	300.0f);
+void GFX::LoadData()
+{
+	guPerspective(projection, FOV, ASPECT, NEAR, FAR);
 	GX_LoadProjectionMtx(projection, GX_PERSPECTIVE);
 
 	GX_ClearVtxDesc();
@@ -109,13 +111,13 @@ void GFX::InitVideo()
 void GFX::Update()
 {
 	guLookAt(view, &camera,	&up, &look);
-	GX_SetViewport(0,0,screenMode->fbWidth,screenMode->efbHeight,0,1);
+	GX_SetViewport(0, 0, screenMode->fbWidth, screenMode->efbHeight, 0, 1);
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
-	UpdateScreen(view);
+	UpdateScreen(view, GCN_ARRAY_SIZE(vertices) / 3);
 }
 
-void GFX::UpdateScreen(Mtx& view)
+void GFX::UpdateScreen(Mtx& view, u16 vertexCount)
 {
 	Mtx	modelView;
 	
@@ -124,18 +126,13 @@ void GFX::UpdateScreen(Mtx& view)
 	guMtxConcat(view, modelView, modelView);
 	
 	GX_LoadPosMtxImm(modelView,	GX_PNMTX0);
-
-	GX_Begin(GX_TRIANGLES, GX_VTXFMT0, 3);
-
-	GX_Position1x8(0);
-	GX_Color1x8(0);
-	GX_Position1x8(1);
-	GX_Color1x8(1);
-	GX_Position1x8(2);
-	GX_Color1x8(2);
-	
+	GX_Begin(GX_TRIANGLES, GX_VTXFMT0, vertexCount);
+	for (u8 i = 0; i < vertexCount; ++i)
+	{
+		GX_Position1x8(i);
+		GX_Color1x8(i);
+	}
 	GX_End();
-
 	GX_DrawDone();
 	readyForCopy = GX_TRUE;
 

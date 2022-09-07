@@ -7,4 +7,6 @@
 #define GCN_UNUSED      __attribute__((unused))
 #define GCN_EXIT_SUCESS 0
 
+#define GCN_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+
 #endif

@@ -68,9 +68,12 @@ namespace GFX
 	void InitScreen();
 	void InitGPU();
 	void LoadData();
+
 	void CopyBuffers(u32 count);
 	void UpdateScreen();
+
 	void DrawVertex(const Vertex& vertex);
+	void DrawQuad(const Vertex* first);
 }
 
 void GFX::InitVideo()
@@ -123,8 +126,8 @@ void GFX::LoadData()
 	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
 	
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS,	GX_POS_XYZ,	GX_S16,	0);
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8,	0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS,	GX_POS_XYZ,	GX_S16, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 	
 	GX_SetNumTexGens(1);
@@ -141,12 +144,15 @@ void GFX::Update()
 {
 	camera.CreateView();
 	GX_SetViewport(0, 0, screenMode->fbWidth, screenMode->efbHeight, 0, 1);
+	
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
+	
 	GX_SetTevOp(GX_TEVSTAGE0, GX_DECAL);
 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 	GX_SetNumChans(1);
 	GX_LoadTexObj(&texture, GX_TEXMAP0);
+	
 	UpdateScreen();
 }
 
@@ -159,10 +165,7 @@ void GFX::UpdateScreen()
 	GX_LoadPosMtxImm(modelView,	GX_PNMTX0);
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, GCN_ARRAY_SIZE(vertices));
-		DrawVertex(vertices[0]);
-		DrawVertex(vertices[1]);
-		DrawVertex(vertices[2]);
-		DrawVertex(vertices[3]);
+		DrawQuad(&vertices[0]);
 	GX_End();
 	
 	GX_DrawDone();
@@ -176,6 +179,14 @@ void GFX::DrawVertex(const Vertex& vertex)
 	GX_Position3s16(vertex.x, vertex.y, vertex.z);
 	GX_Color4u8(vertex.r, vertex.g, vertex.b, vertex.a);
 	GX_TexCoord2f32(vertex.u, vertex.v);
+}
+
+void GFX::DrawQuad(const Vertex* first)
+{
+	DrawVertex(*GCN_INC_PTR(first, 0));
+	DrawVertex(*GCN_INC_PTR(first, 1));
+	DrawVertex(*GCN_INC_PTR(first, 2));
+	DrawVertex(*GCN_INC_PTR(first, 3));
 }
 
 void GFX::CopyBuffers(GCN_UNUSED u32 count)

@@ -9,6 +9,7 @@
 
 #include "Util.h"
 #include "Camera.h"
+#include "Vertex.h"
 
 #include "textures_tpl.h"
 #include "textures.h"
@@ -27,29 +28,41 @@ namespace GFX
 	static GXRModeObj* screenMode   = nullptr;
 	static vu8         readyForCopy = GX_FALSE;
 
-	static GXTexObj texture     = {};
-	static TPLFile  texturesTPL = {};
+	static GXTexObj texture = {};
+	static TPLFile  skyTPL  = {};
 
 	static Mtx44   projection = {};
 	static GXColor bgColor    = {0, 0, 0, 255};
-	static Camera  camera     = Camera({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f});
+	
+	static Camera camera = Camera
+	(
+		{0.0f, 0.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f},
+		{0.0f, 0.0f, -1.0f}
+	);
 
-	static s16 vertices[] ATTRIBUTE_ALIGN(32)
+	alignas(32) static Vertex vertices[]
 	{
-		-30,  30, 0, // 0
-		 30,  30, 0, // 1
-		 30, -30, 0, // 2
-		-30, -30, 0, // 3
-	};
-
-	static u8 colors[] ATTRIBUTE_ALIGN(32)
-	{
-		0,   255, 0,   0,   // 0 purple
-		240, 0,   0,   255, // 1 red
-		255, 180, 0,   255, // 2 orange
-		255, 255, 0,   255, // 3 yellow
-	 	10,  120, 40,  255, // 4 green
-	  	0,   20,  100, 255  // 5 blue
+		{
+			-30, 30, 0, // Position
+			0, 0, 0, 0, // Color
+			0.0f, 0.0f  // TxCoords
+		},
+		{
+			30, 30, 0,  // Position
+			0, 0, 0, 0, // Color
+			1.0f, 0.0f  // TxCoords
+		},
+		{
+			30, -30, 0, // Position
+			0, 0, 0, 0, // Color
+			1.0f, 1.0f  // TxCoords
+		},
+		{
+			-30, -30, 0, // Position
+			0, 0, 0, 0,  // Color
+			0.0f, 1.0f   // TxCoords
+		}
 	};
 
 	void InitScreen();
@@ -57,7 +70,7 @@ namespace GFX
 	void LoadData();
 	void CopyBuffers(u32 count);
 	void UpdateScreen();
-	void DrawVertex(u8 position, u8 color, u8 texU, u8 texV);
+	void DrawVertex(const Vertex& vertex);
 }
 
 void GFX::InitVideo()
@@ -106,23 +119,20 @@ void GFX::LoadData()
 
 	GX_ClearVtxDesc();
 
-	GX_SetVtxDesc(GX_VA_POS, GX_INDEX8);
-	GX_SetVtxDesc(GX_VA_CLR0, GX_INDEX8);
+	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
 	
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS,	GX_POS_XYZ,	GX_S16,	0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8,	0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 	
-	GX_SetArray(GX_VA_POS, vertices, 3 * sizeof(s16));
-	GX_SetArray(GX_VA_CLR0, colors, 4 * sizeof(u8));
-	
 	GX_SetNumTexGens(1);
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 	GX_InvalidateTexAll();
 	
-	TPL_OpenTPLFromMemory(&texturesTPL, U8_TO_VOID_PTR(textures_tpl), textures_tpl_size);
-	TPL_GetTexture(&texturesTPL, sky, &texture);
+	TPL_OpenTPLFromMemory(&skyTPL, U8_TO_VOID_PTR(textures_tpl), textures_tpl_size);
+	TPL_GetTexture(&skyTPL, sky, &texture);
 
 	GX_LoadTexObj(&texture, GX_TEXMAP0);
 }
@@ -148,11 +158,11 @@ void GFX::UpdateScreen()
 	guMtxConcat(camera.viewMat, modelView, modelView);
 	GX_LoadPosMtxImm(modelView,	GX_PNMTX0);
 
-	GX_Begin(GX_QUADS, GX_VTXFMT0, GCN_ARRAY_SIZE(vertices) / 3);
-		DrawVertex(0, 0, 0.0f, 0.0f);
-		DrawVertex(1, 0, 1.0f, 0.0f);
-		DrawVertex(2, 0, 1.0f, 1.0f);
-		DrawVertex(3, 0, 0.0f, 1.0f);
+	GX_Begin(GX_QUADS, GX_VTXFMT0, GCN_ARRAY_SIZE(vertices));
+		DrawVertex(vertices[0]);
+		DrawVertex(vertices[1]);
+		DrawVertex(vertices[2]);
+		DrawVertex(vertices[3]);
 	GX_End();
 	
 	GX_DrawDone();
@@ -161,11 +171,11 @@ void GFX::UpdateScreen()
 	VIDEO_WaitVSync();
 }
 
-void GFX::DrawVertex(u8 position, u8 color, u8 texU, u8 texV)
+void GFX::DrawVertex(const Vertex& vertex)
 {
-	GX_Position1x8(position);
-	GX_Color1x8(color);
-	GX_TexCoord2f32(texU, texV);
+	GX_Position3s16(vertex.x, vertex.y, vertex.z);
+	GX_Color4u8(vertex.r, vertex.g, vertex.b, vertex.a);
+	GX_TexCoord2f32(vertex.u, vertex.v);
 }
 
 void GFX::CopyBuffers(GCN_UNUSED u32 count)

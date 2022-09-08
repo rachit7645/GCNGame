@@ -19,7 +19,7 @@ namespace GFX
 	constexpr auto FIFO_SIZE = 256 * 1024;
 
 	constexpr auto FOV    = 70.0f;
-	constexpr auto ASPECT = static_cast<f32>(4.0 / 3.0f);
+	constexpr auto ASPECT = static_cast<f32>(4.0 / 3.0);
 	constexpr auto NEAR   = 0.1f;
 	constexpr auto FAR    = 500.0f;
 

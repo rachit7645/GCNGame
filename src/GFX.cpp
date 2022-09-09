@@ -125,6 +125,26 @@ namespace GFX
 			0, 0, 0, 0,
 			0.0f, 1.0f
 		},
+		{
+			1.0f, -1.0f, -1.0f,
+			0, 0, 0, 0,
+			0.0f, 0.0f
+		},
+		{
+			1.0f, 1.0f, -1.0f,
+			0, 0, 0, 0,
+			1.0f, 0.0f
+		},
+		{
+			-1.0f, 1.0f, -1.0f,
+			0, 0, 0, 0,
+			1.0f, 1.0f
+		},
+		{
+			-1.0f, -1.0f, -1.0f,
+			0, 0, 0, 0,
+			0.0f, 1.0f
+		},
 	};
 
 	void InitScreen();
@@ -266,18 +286,10 @@ void GFX::DrawCube()
 		DrawVertex(vertices[14]);
 		DrawVertex(vertices[15]);
 
-		GX_Position3f32(1.0f, -1.0f, -1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(0.0f,0.0f);
-		GX_Position3f32(1.0f, 1.0f,-1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(1.0f, 0.0f);
-		GX_Position3f32(-1.0f, 1.0f, -1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(1.0f, 1.0f);
-		GX_Position3f32(-1.0f, -1.0f, -1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(0.0f, 1.0f);
+		DrawVertex(vertices[16]);
+		DrawVertex(vertices[17]);
+		DrawVertex(vertices[18]);
+		DrawVertex(vertices[19]);
 
 		GX_Position3f32(1.0f, -1.0f, 1.0f);
 		GX_Color4u8(0, 0, 0, 0);

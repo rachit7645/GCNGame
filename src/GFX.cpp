@@ -23,10 +23,12 @@ namespace GFX
 	constexpr auto NEAR   = 0.1f;
 	constexpr auto FAR    = 500.0f;
 
-	static void*       frameBuffer  = nullptr;
-	static void*       fifoBuffer   = nullptr;
-	static GXRModeObj* screenMode   = nullptr;
-	static vu8         readyForCopy = GX_FALSE;
+	static void*  frameBuffers[] = {nullptr, nullptr};
+	static size_t currentFB      = 0;
+
+	static void*       fifoBuffer    = nullptr;
+	static GXRModeObj* screenMode    = nullptr;
+	static vu8         readyForCopy  = GX_FALSE;
 
 	static GXTexObj texture = {};
 	static TPLFile  skyTPL  = {};
@@ -62,14 +64,21 @@ void GFX::InitVideo()
 
 void GFX::InitScreen()
 {
-	screenMode  = VIDEO_GetPreferredMode(nullptr);
-	frameBuffer = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
+	screenMode      = VIDEO_GetPreferredMode(nullptr);
+	frameBuffers[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
+	frameBuffers[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
 	
 	VIDEO_Configure(screenMode);
-	VIDEO_SetNextFramebuffer(frameBuffer);
+	VIDEO_SetNextFramebuffer(frameBuffers[currentFB]);
 	VIDEO_SetPostRetraceCallback(GFX::CopyBuffers);
 	VIDEO_SetBlack(false);
 	VIDEO_Flush();
+	VIDEO_WaitVSync();
+	if(screenMode->viTVMode & VI_NON_INTERLACE)
+	{
+		VIDEO_WaitVSync();
+	}
+	currentFB ^= 1;
 }
 
 void GFX::InitGPU()
@@ -87,7 +96,7 @@ void GFX::InitGPU()
 	GX_SetCopyFilter(screenMode->aa, screenMode->sample_pattern, true, screenMode->vfilter);
 	GX_SetFieldMode(screenMode->field_rendering, ((screenMode->viHeight == 2 * screenMode->xfbHeight) ? GX_ENABLE : GX_DISABLE));
 	GX_SetCullMode(GX_CULL_BACK);
-	GX_CopyDisp(frameBuffer, GX_TRUE);
+	GX_CopyDisp(frameBuffers[currentFB], GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
 }
 
@@ -235,7 +244,11 @@ void GFX::EndDraw()
 {
 	GX_DrawDone();
 	readyForCopy = GX_TRUE;
+
+	VIDEO_SetNextFramebuffer(frameBuffers[currentFB]);
+	VIDEO_Flush();
 	VIDEO_WaitVSync();
+	currentFB ^= 1;
 }
 
 void GFX::CopyBuffers(GCN_UNUSED u32 count)
@@ -244,7 +257,7 @@ void GFX::CopyBuffers(GCN_UNUSED u32 count)
 	{
 		GX_SetZMode(GX_TRUE, GX_LEQUAL,	GX_TRUE);
 		GX_SetColorUpdate(GX_TRUE);
-		GX_CopyDisp(frameBuffer, GX_TRUE);
+		GX_CopyDisp(frameBuffers[currentFB], GX_TRUE);
 		GX_Flush();
 		readyForCopy = GX_FALSE;
 	}

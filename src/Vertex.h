@@ -8,7 +8,7 @@ namespace GFX
 	struct Vertex
 	{
 		// Position
-		s16 x, y, z;
+		f32 x, y, z;
 		// Color
 		u8 r, g, b, a;
 		// TxCoords

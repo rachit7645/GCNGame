@@ -7,7 +7,7 @@
 namespace GFX
 {
 	void InitVideo();
-	void Update();
+	void Render();
 }
 
 

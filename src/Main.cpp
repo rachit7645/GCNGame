@@ -13,7 +13,7 @@ int main(GCN_UNUSED int argc, GCN_UNUSED char** argv)
 
 	while(true)
 	{
-		GFX::Update();
+		GFX::Render();
 		gamePad.Update();
 
 		if (gamePad.Start())

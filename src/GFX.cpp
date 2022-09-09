@@ -41,50 +41,6 @@ namespace GFX
 		{0.0f, 0.0f, -1.0f}
 	);
 
-	alignas(32) static Vertex vertices[]
-	{
-		{
-			-1.0f, 1.0f, -1.0f, // Position
-			0, 0, 0, 0,         // Color
-			0.0f, 0.0f          // TxCoords
-		},
-		{
-			1.0f, 1.0f, -1.0f,  // Position
-			0, 0, 0, 0,         // Color
-			1.0f, 0.0f          // TxCoords
-		},
-		{
-			1.0f, 1.0f, 1.0f, // Position
-			0, 0, 0, 0,       // Color
-			1.0f, 1.0f        // TxCoords
-		},
-		{
-			-1.0f, 1.0f, 1.0f, // Position
-			0, 0, 0, 0,        // Color
-			0.0f, 1.0f         // TxCoords
-		},
-		{
-			1.0f, -1.0f, -1.0f, // Position
-			0, 0, 0, 0,         // Color
-			0.0f, 0.0f          // TxCoords
-		},
-		{
-			1.0f, -1.0f, 1.0f, // Position
-			0, 0, 0, 0,        // Color
-			0.0f, 1.0f         // TxCoords
-		},
-		{
-			-1.0f, -1.0f, 1.0f, // Position
-			0, 0, 0, 0,         // Color
-			1.0f, 0.0f          // TxCoords
-		},
-		{
-			-1.0f, -1.0f, -1.0f, // Position
-			0, 0, 0, 0,          // Color
-			1.0f, 1.0f           // TxCoords
-		}
-	};
-
 	void InitScreen();
 	void InitGPU();
 	void LoadData();
@@ -94,9 +50,6 @@ namespace GFX
 	void BeginDraw();
 	void DrawCube();
 	void EndDraw();
-
-	void DrawVertex(const Vertex& vertex);
-	void DrawQuad(size_t v0, size_t v1, size_t v2, size_t v3);
 }
 
 void GFX::InitVideo()
@@ -133,7 +86,7 @@ void GFX::InitGPU()
 	GX_SetDispCopyDst(screenMode->fbWidth, screenMode->xfbHeight);
 	GX_SetCopyFilter(screenMode->aa, screenMode->sample_pattern, true, screenMode->vfilter);
 	GX_SetFieldMode(screenMode->field_rendering, ((screenMode->viHeight == 2 * screenMode->xfbHeight) ? GX_ENABLE : GX_DISABLE));
-	GX_SetCullMode(GX_CULL_NONE);
+	GX_SetCullMode(GX_CULL_BACK);
 	GX_CopyDisp(frameBuffer, GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
 }
@@ -198,12 +151,83 @@ void GFX::BeginDraw()
 void GFX::DrawCube()
 {
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 6 * 4);
-		DrawQuad(0, 3, 2, 1);
-		DrawQuad(0, 7, 6, 3);
-		DrawQuad(0, 1, 4, 7);
-		DrawQuad(1, 2, 5, 4);
-		DrawQuad(2, 3, 6, 5);
-		DrawQuad(4, 7, 6, 5);
+		GX_Position3f32(-1.0f, 1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 0.0f);
+		GX_Position3f32(-1.0f, 1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 0.0f);
+		GX_Position3f32(-1.0f, -1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 1.0f);
+		GX_Position3f32(-1.0f, -1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 1.0f);
+
+		GX_Position3f32(1.0f, 1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 0.0f);
+		GX_Position3f32(1.0f, -1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 0.0f);
+		GX_Position3f32(1.0f, -1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 1.0f);
+		GX_Position3f32(1.0f, 1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 1.0f);
+
+		GX_Position3f32(-1.0f, -1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 0.0f);
+		GX_Position3f32(1.0f, -1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 0.0f);
+		GX_Position3f32(1.0f,-1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 1.0f);
+		GX_Position3f32(-1.0f, -1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 1.0f);
+
+		GX_Position3f32(-1.0f, 1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 0.0f);
+		GX_Position3f32(-1.0f, 1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 0.0f);
+		GX_Position3f32(1.0f, 1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 1.0f);
+		GX_Position3f32( 1.0f, 1.0f,1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 1.0f);
+
+		GX_Position3f32(1.0f, -1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f,0.0f);
+		GX_Position3f32(1.0f, 1.0f,-1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 0.0f);
+		GX_Position3f32(-1.0f, 1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 1.0f);
+		GX_Position3f32(-1.0f, -1.0f, -1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 1.0f);
+
+		GX_Position3f32(1.0f, -1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 0.0f);
+		GX_Position3f32(-1.0f, -1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 0.0f);
+		GX_Position3f32(-1.0f, 1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(1.0f, 1.0f);
+		GX_Position3f32(1.0f, 1.0f, 1.0f);
+		GX_Color4u8(0, 0, 0, 0);
+		GX_TexCoord2f32(0.0f, 1.0f);
 	GX_End();
 }
 
@@ -212,21 +236,6 @@ void GFX::EndDraw()
 	GX_DrawDone();
 	readyForCopy = GX_TRUE;
 	VIDEO_WaitVSync();
-}
-
-void GFX::DrawVertex(const Vertex& vertex)
-{
-	GX_Position3f32(vertex.x, vertex.y, vertex.z);
-	GX_Color4u8(vertex.r, vertex.g, vertex.b, vertex.a);
-	GX_TexCoord2f32(vertex.u, vertex.v);
-}
-
-void GFX::DrawQuad(size_t v0, size_t v1, size_t v2, size_t v3)
-{
-	DrawVertex(vertices[v0]);
-	DrawVertex(vertices[v1]);
-	DrawVertex(vertices[v2]);
-	DrawVertex(vertices[v3]);
 }
 
 void GFX::CopyBuffers(GCN_UNUSED u32 count)

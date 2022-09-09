@@ -43,6 +43,30 @@ namespace GFX
 		{0.0f, 0.0f, -1.0f}
 	);
 
+	alignas(32) static Vertex vertices[]
+	{
+		{
+			-1.0f, 1.0f, -1.0f,
+			0, 0, 0, 0,
+			0.0f, 0.0f
+		},
+		{
+			-1.0f, 1.0f, 1.0f,
+			0, 0, 0, 0,
+			1.0f, 0.0f
+		},
+		{
+			-1.0f, -1.0f, 1.0f,
+			0, 0, 0, 0,
+			1.0f, 1.0f
+		},
+		{
+			-1.0f, -1.0f, -1.0f,
+			0, 0, 0, 0,
+			0.0f, 1.0f
+		},
+	};
+
 	void InitScreen();
 	void InitGPU();
 	void LoadData();
@@ -52,6 +76,8 @@ namespace GFX
 	void BeginDraw();
 	void DrawCube();
 	void EndDraw();
+
+	void DrawVertex(const Vertex& vertex);
 }
 
 void GFX::InitVideo()
@@ -160,18 +186,10 @@ void GFX::BeginDraw()
 void GFX::DrawCube()
 {
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 6 * 4);
-		GX_Position3f32(-1.0f, 1.0f, -1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(0.0f, 0.0f);
-		GX_Position3f32(-1.0f, 1.0f, 1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(1.0f, 0.0f);
-		GX_Position3f32(-1.0f, -1.0f, 1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(1.0f, 1.0f);
-		GX_Position3f32(-1.0f, -1.0f, -1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(0.0f, 1.0f);
+		DrawVertex(vertices[0]);
+		DrawVertex(vertices[1]);
+		DrawVertex(vertices[2]);
+		DrawVertex(vertices[3]);
 
 		GX_Position3f32(1.0f, 1.0f, -1.0f);
 		GX_Color4u8(0, 0, 0, 0);
@@ -249,6 +267,13 @@ void GFX::EndDraw()
 	VIDEO_Flush();
 	VIDEO_WaitVSync();
 	currentFB ^= 1;
+}
+
+void GFX::DrawVertex(const Vertex& vertex)
+{
+	GX_Position3f32(vertex.x, vertex.y, vertex.z);
+	GX_Color4u8(vertex.r, vertex.g, vertex.b, vertex.a);
+	GX_TexCoord2f32(vertex.u, vertex.v);
 }
 
 void GFX::CopyBuffers(GCN_UNUSED u32 count)

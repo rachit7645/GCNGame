@@ -5,6 +5,8 @@
 
 namespace GFX
 {
+	// \brief A struct representing a single vertex
+	// \warning Must be aligned to a 32byte boundary
 	struct Vertex
 	{
 		// Position

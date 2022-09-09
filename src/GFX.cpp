@@ -85,6 +85,26 @@ namespace GFX
 			0, 0, 0, 0,
 			0.0f, 1.0f
 		},
+		{
+			-1.0f, -1.0f, 1.0f,
+			0, 0, 0, 0,
+			0.0f, 0.0f
+		},
+		{
+			1.0f, -1.0f, 1.0f,
+			0, 0, 0, 0,
+			1.0f, 0.0f
+		},
+		{
+			1.0f, -1.0f, -1.0f,
+			0, 0, 0, 0,
+			1.0f, 1.0f
+		},
+		{
+			-1.0f, -1.0f, -1.0f,
+			0, 0, 0, 0,
+			0.0f, 1.0f
+		},
 	};
 
 	void InitScreen();
@@ -191,7 +211,7 @@ void GFX::BeginDraw()
 	GX_SetNumChans(1);
 	GX_LoadTexObj(&texture, GX_TEXMAP0);
 
-	guVector axis = {0, 1, 0};
+	guVector axis = {-1, -1, 0};
 	static f32 rotation = 0.0f;
 	rotation++;
 	
@@ -216,18 +236,10 @@ void GFX::DrawCube()
 		DrawVertex(vertices[6]);
 		DrawVertex(vertices[7]);
 
-		GX_Position3f32(-1.0f, -1.0f, 1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(0.0f, 0.0f);
-		GX_Position3f32(1.0f, -1.0f, 1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(1.0f, 0.0f);
-		GX_Position3f32(1.0f,-1.0f, -1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(1.0f, 1.0f);
-		GX_Position3f32(-1.0f, -1.0f, -1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(0.0f, 1.0f);
+		DrawVertex(vertices[8]);
+		DrawVertex(vertices[9]);
+		DrawVertex(vertices[10]);
+		DrawVertex(vertices[11]);
 
 		GX_Position3f32(-1.0f, 1.0f, 1.0f);
 		GX_Color4u8(0, 0, 0, 0);

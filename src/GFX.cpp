@@ -16,7 +16,7 @@
 
 namespace GFX
 {
-	constexpr auto FIFO_SIZE = 256 * 1024;
+	constexpr auto GPU_FIFO_SIZE = 256 * 1024;
 
 	constexpr auto FOV    = 70.0f;
 	constexpr auto ASPECT = static_cast<f32>(4.0 / 3.0);
@@ -26,7 +26,7 @@ namespace GFX
 	static void*  frameBuffers[] = {nullptr, nullptr};
 	static size_t currentFB      = 0;
 
-	static void*       fifoBuffer    = nullptr;
+	static void*       gpuFifoBuffer = nullptr;
 	static GXRModeObj* screenMode    = nullptr;
 	static vu8         readyForCopy  = GX_FALSE;
 
@@ -178,6 +178,7 @@ namespace GFX
 	void EndDraw();
 
 	void DrawVertex(const Vertex& vertex);
+	void DrawQuad(size_t v0, size_t v1, size_t v2, size_t v3, const Vertex* vertices = GFX::vertices);
 }
 
 void GFX::InitVideo()
@@ -209,9 +210,9 @@ void GFX::InitScreen()
 
 void GFX::InitGPU()
 {
-	fifoBuffer = MEM_K0_TO_K1(memalign(32, FIFO_SIZE));
-	memset(fifoBuffer, 0, FIFO_SIZE);
-	GX_Init(fifoBuffer, FIFO_SIZE);
+	gpuFifoBuffer = MEM_K0_TO_K1(memalign(32, GPU_FIFO_SIZE));
+	memset(gpuFifoBuffer, 0, GPU_FIFO_SIZE);
+	GX_Init(gpuFifoBuffer, GPU_FIFO_SIZE);
 	
 	GX_SetCopyClear(bgColor, GX_MAX_Z24);
 	GX_SetViewport(0, 0, screenMode->fbWidth, screenMode->efbHeight, 0, 1);
@@ -285,36 +286,14 @@ void GFX::BeginDraw()
 
 void GFX::DrawCube()
 {
+	// Draw 6 quads with 4 vertices each
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 6 * 4);
-		DrawVertex(vertices[0]);
-		DrawVertex(vertices[1]);
-		DrawVertex(vertices[2]);
-		DrawVertex(vertices[3]);
-
-		DrawVertex(vertices[4]);
-		DrawVertex(vertices[5]);
-		DrawVertex(vertices[6]);
-		DrawVertex(vertices[7]);
-
-		DrawVertex(vertices[8]);
-		DrawVertex(vertices[9]);
-		DrawVertex(vertices[10]);
-		DrawVertex(vertices[11]);
-
-		DrawVertex(vertices[12]);
-		DrawVertex(vertices[13]);
-		DrawVertex(vertices[14]);
-		DrawVertex(vertices[15]);
-
-		DrawVertex(vertices[16]);
-		DrawVertex(vertices[17]);
-		DrawVertex(vertices[18]);
-		DrawVertex(vertices[19]);
-
-		DrawVertex(vertices[20]);
-		DrawVertex(vertices[21]);
-		DrawVertex(vertices[22]);
-		DrawVertex(vertices[23]);
+		DrawQuad(0,  1,  2,  3);
+		DrawQuad(4,  5,  6,  7);
+		DrawQuad(8,  9,  10, 11);
+		DrawQuad(12, 13, 14, 15);
+		DrawQuad(16, 17, 18, 19);
+		DrawQuad(20, 21, 22, 23);
 	GX_End();
 }
 
@@ -334,6 +313,14 @@ void GFX::DrawVertex(const Vertex& vertex)
 	GX_Position3f32(vertex.x, vertex.y, vertex.z);
 	GX_Color4u8(vertex.r, vertex.g, vertex.b, vertex.a);
 	GX_TexCoord2f32(vertex.u, vertex.v);
+}
+
+void GFX::DrawQuad(size_t v0, size_t v1, size_t v2, size_t v3, const Vertex* vertices)
+{
+	DrawVertex(vertices[v0]);
+	DrawVertex(vertices[v1]);
+	DrawVertex(vertices[v2]);
+	DrawVertex(vertices[v3]);
 }
 
 void GFX::CopyBuffers(GCN_UNUSED u32 count)

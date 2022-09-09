@@ -145,6 +145,26 @@ namespace GFX
 			0, 0, 0, 0,
 			0.0f, 1.0f
 		},
+		{
+			1.0f, -1.0f, 1.0f,
+			0, 0, 0, 0,
+			0.0f, 0.0f
+		},
+		{
+			-1.0f, -1.0f, 1.0f,
+			0, 0, 0, 0,
+			1.0f, 0.0f
+		},
+		{
+			-1.0f, 1.0f, 1.0f,
+			0, 0, 0, 0,
+			1.0f, 1.0f
+		},
+		{
+			1.0f, 1.0f, 1.0f,
+			0, 0, 0, 0,
+			0.0f, 1.0f
+		},
 	};
 
 	void InitScreen();
@@ -291,18 +311,10 @@ void GFX::DrawCube()
 		DrawVertex(vertices[18]);
 		DrawVertex(vertices[19]);
 
-		GX_Position3f32(1.0f, -1.0f, 1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(0.0f, 0.0f);
-		GX_Position3f32(-1.0f, -1.0f, 1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(1.0f, 0.0f);
-		GX_Position3f32(-1.0f, 1.0f, 1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(1.0f, 1.0f);
-		GX_Position3f32(1.0f, 1.0f, 1.0f);
-		GX_Color4u8(0, 0, 0, 0);
-		GX_TexCoord2f32(0.0f, 1.0f);
+		DrawVertex(vertices[20]);
+		DrawVertex(vertices[21]);
+		DrawVertex(vertices[22]);
+		DrawVertex(vertices[23]);
 	GX_End();
 }
 
@@ -328,7 +340,7 @@ void GFX::CopyBuffers(GCN_UNUSED u32 count)
 {
 	if (readyForCopy == GX_TRUE)
 	{
-		GX_SetZMode(GX_TRUE, GX_LEQUAL,	GX_TRUE);
+		GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 		GX_SetColorUpdate(GX_TRUE);
 		GX_CopyDisp(frameBuffers[currentFB], GX_TRUE);
 		GX_Flush();

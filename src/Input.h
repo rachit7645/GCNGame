@@ -18,16 +18,16 @@ namespace Input
 		// \returns void
 		GamePad(int pad);
 
-		// \fn Input::GamePad::Update()
+		// \fn void Input::GamePad::Update()
 		// \brief Polls input data from the controllers
 		// \returns void
 		void Update();
 		
-		// \fn Input::GamePad::A()
+		// \fn bool Input::GamePad::A()
 		// \brief Returns if the A key is pressed
 		// \returns bool
-		bool A()     const;
-		// \fn Input::GamePad::Start()
+		bool A() const;
+		// \fn bool Input::GamePad::Start()
 		// \brief Returns if the Start key is pressed
 		// \returns bool
 		bool Start() const;
@@ -39,7 +39,7 @@ namespace Input
 		u16 m_buttonsDown = 0;
 	};
 
-	// \fn Input::InitControllers()
+	// \fn void Input::InitControllers()
 	// \brief Initialises controller subsystem
 	// \returns void
 	void InitControllers();

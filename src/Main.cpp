@@ -27,5 +27,5 @@ int main(GCN_UNUSED int argc, GCN_UNUSED char** argv)
 		}
 	}
 
-	return GCN_EXIT_SUCESS;
+	return GCN_EXIT_SUCCESS;
 }

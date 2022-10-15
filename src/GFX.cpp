@@ -36,7 +36,7 @@ namespace GFX
 	static Mtx44   projection = {};
 	static GXColor bgColor    = {0, 0, 0, 255};
 	
-	static Camera camera = Camera
+	static auto camera = Camera
 	(
 		{0.0f, 0.0f, 0.0f},
 		{0.0f, 1.0f, 0.0f},
@@ -167,6 +167,8 @@ namespace GFX
 		},
 	};
 
+	f32 rotation = 0.0f;
+
 	void InitScreen();
 	void InitGPU();
 	void LoadData();
@@ -201,10 +203,12 @@ void GFX::InitScreen()
 	VIDEO_SetBlack(false);
 	VIDEO_Flush();
 	VIDEO_WaitVSync();
+	
 	if(screenMode->viTVMode & VI_NON_INTERLACE)
 	{
 		VIDEO_WaitVSync();
 	}
+	
 	currentFB ^= 1;
 }
 
@@ -246,7 +250,7 @@ void GFX::LoadData()
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 	GX_InvalidateTexAll();
 	
-	TPL_OpenTPLFromMemory(&skyTPL, U8_TO_VOID_PTR(textures_tpl), textures_tpl_size);
+	TPL_OpenTPLFromMemory(&skyTPL, Util::ToVoidPtr(textures_tpl), textures_tpl_size);
 	TPL_GetTexture(&skyTPL, sky, &texture);
 
 	GX_LoadTexObj(&texture, GX_TEXMAP0);
@@ -273,7 +277,6 @@ void GFX::BeginDraw()
 	GX_LoadTexObj(&texture, GX_TEXMAP0);
 
 	guVector axis = {-1, -1, 0};
-	static f32 rotation = 0.0f;
 	rotation++;
 	
 	Mtx	modelView;
@@ -286,8 +289,9 @@ void GFX::BeginDraw()
 
 void GFX::DrawCube()
 {
-	// Draw 6 quads with 4 vertices each
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 6 * 4);
+	auto vertexCount = Util::ArraySize(vertices);
+	// Draw vertexCount / 4 quads
+	GX_Begin(GX_QUADS, GX_VTXFMT0, vertexCount);
 		DrawQuad(0,  1,  2,  3);
 		DrawQuad(4,  5,  6,  7);
 		DrawQuad(8,  9,  10, 11);

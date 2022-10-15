@@ -10,13 +10,22 @@
 
 // Exit codes
 
-#define GCN_EXIT_SUCESS 0
-#define GCN_EXIT_START  1
+constexpr auto GCN_EXIT_SUCCESS = 0;
+constexpr auto GCN_EXIT_START   = 1;
 
-// Macros
+namespace Util
+{
+	template <typename T, size_t S>
+	constexpr auto ArraySize(GCN_UNUSED T (&arr)[S])
+	{
+		return S;
+	}
 
-// TODO: Make type safe template
-#define GCN_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-#define U8_TO_VOID_PTR(x) (reinterpret_cast<void*>(const_cast<u8*>(x)))
+	template<typename T>
+	constexpr auto ToVoidPtr(const T* x)
+	{
+		return reinterpret_cast<void*>(const_cast<T*>(x));
+	}
+}
 
 #endif

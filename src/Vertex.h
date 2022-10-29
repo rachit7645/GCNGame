@@ -5,15 +5,15 @@
 
 namespace GFX
 {
-	// \brief A struct representing a single vertex
-	// \warning Must be aligned to a 32byte boundary
+	// \brief
+	// A struct representing a single vertex.
 	struct Vertex
 	{
-		// Position
+		// \brief Position
 		f32 x, y, z;
-		// Color
+		// \brief Color
 		u8 r, g, b, a;
-		// TxCoords
+		// \brief Texture Coordinates
 		f32 u, v;
 	};
 }

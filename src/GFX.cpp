@@ -16,26 +16,41 @@
 
 namespace GFX
 {
+	// \brief The size of the GPU FIFO buffer
 	constexpr auto GPU_FIFO_SIZE = 256 * 1024;
 
-	constexpr auto FOV    = 70.0f;
+	// \brief The field of view (in degrees) 
+	constexpr auto FOV = 70.0f;
+	// \brief The aspect ratio (4:3)
 	constexpr auto ASPECT = static_cast<f32>(4.0 / 3.0);
-	constexpr auto NEAR   = 0.1f;
-	constexpr auto FAR    = 500.0f;
+	// \brief The near plane of the projection matrix
+	constexpr auto NEAR = 0.1f;
+	// \brief The far plane of the projection matrix
+	constexpr auto FAR = 500.0f;
 
-	static void*  frameBuffers[] = {nullptr, nullptr};
-	static size_t currentFB      = 0;
+	// \brief The frame buffers
+	static void* frameBuffers[] = {nullptr, nullptr};
+	// \brief The current frame buffer
+	static size_t currentFB = 0;
 
-	static void*       gpuFifoBuffer = nullptr;
-	static GXRModeObj* screenMode    = nullptr;
-	static vu8         readyForCopy  = GX_FALSE;
+	// \brief The GPU FIFO buffer
+	static void* gpuFifoBuffer = nullptr;
+	// \brief The current screen mode
+	static GXRModeObj* screenMode = nullptr;
+	// \brief If GX_TRUE, copy the EFB to the XFB
+	static vu8 readyForCopy = GX_FALSE;
 
+	// \brief The GPU texture object
 	static GXTexObj texture = {};
-	static TPLFile  skyTPL  = {};
+	// \brief The TPL file to load the texture
+	static TPLFile skyTPL = {};
 
-	static Mtx44   projection = {};
-	static GXColor bgColor    = {0, 0, 0, 255};
+	// \brief The current projection matrix
+	static Mtx44 projection = {};
+	// \brief The current background color
+	static GXColor bgColor = {0, 0, 0, 255};
 	
+	// \brief The camera
 	static auto camera = Camera
 	(
 		{0.0f, 0.0f, 0.0f},
@@ -43,7 +58,8 @@ namespace GFX
 		{0.0f, 0.0f, -1.0f}
 	);
 
-	alignas(32) static Vertex vertices[]
+	// \brief The cube vertices
+	static Vertex vertices[]
 	{
 		{
 			-1.0f, 1.0f, -1.0f,
@@ -166,20 +182,47 @@ namespace GFX
 			0.0f, 1.0f
 		},
 	};
-
+	// \brief The cube's rotation
 	f32 rotation = 0.0f;
 
+	// \fn void GFX::InitScreen()
+	// \brief Initialises the display
+	// \returns void
 	void InitScreen();
+	// \fn void GFX::InitGPU()
+	// \brief Initialises the GPU
+	// \returns void
 	void InitGPU();
+	// \fn void GFX::LoadData()
+	// \brief Loads data to the GPU
+	// \returns void
 	void LoadData();
-
+	
+	// \fn void GFX::CopyBuffers()
+	// \brief Vertical Interrupt callback, copies the EFB to the XFB
+	// \returns void
 	void CopyBuffers(u32 count);
 	
+	// \fn void GFX::BeginDraw()
+	// \brief Begins rendering
+	// \returns void
 	void BeginDraw();
+	// \fn void GFX::DrawCube()
+	// \brief Draws a cube
+	// \returns void
 	void DrawCube();
+	// \fn void GFX::EndDraw()
+	// \brief Ends rendering
+	// \returns void
 	void EndDraw();
 
+	// \fn void GFX::DrawVertex()
+	// \brief Draws a vertex
+	// \returns void
 	void DrawVertex(const Vertex& vertex);
+	// \fn void GFX::DrawQuad()
+	// \brief Draws a quad with four vertices
+	// \returns void
 	void DrawQuad(size_t v0, size_t v1, size_t v2, size_t v3, const Vertex* vertices = GFX::vertices);
 }
 
@@ -238,16 +281,16 @@ void GFX::LoadData()
 
 	GX_ClearVtxDesc();
 
-	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_POS,  GX_DIRECT);
 	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
 	
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS,	GX_POS_XYZ,	GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS,	 GX_POS_XYZ,  GX_F32,   0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST,   GX_F32,   0);
 	
 	GX_SetNumTexGens(1);
-	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX3x4, GX_TG_TEX0, GX_IDENTITY);
 	GX_InvalidateTexAll();
 	
 	TPL_OpenTPLFromMemory(&skyTPL, Util::ToVoidPtr(textures_tpl), textures_tpl_size);
@@ -276,13 +319,13 @@ void GFX::BeginDraw()
 	GX_SetNumChans(1);
 	GX_LoadTexObj(&texture, GX_TEXMAP0);
 
-	guVector axis = {-1, -1, 0};
+	guVector axis = {-1.0f, -1.0f, 0.0f};
 	rotation++;
 	
 	Mtx	modelView;
 	guMtxIdentity(modelView);
 	guMtxRotAxisDeg(modelView, &axis, rotation);
-	guMtxTransApply(modelView, modelView, 0.0f,	0.0f, -5);
+	guMtxTransApply(modelView, modelView, 0.0f,	0.0f, -5.0f);
 	guMtxConcat(camera.viewMat, modelView, modelView);
 	GX_LoadPosMtxImm(modelView,	GX_PNMTX0);
 }
